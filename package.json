@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node index.js",
     "watch": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:ui": "rm -rf ./build/ && cd ../uni-fullstack/osa2/puhelinluettelo/ && npm run build --prod && cd - && cp -r ../uni-fullstack/osa2/puhelinluettelo/build/ ./build/",
+    "deploy": "git push heroku master",
+    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push && npm run deploy",
+    "logs:prod": "heroku logs --tail"
   },
   "author": "",
   "license": "CC0-1.0",
@@ -14,6 +18,7 @@
     "nodemon": "^2.0.2"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.17.1",
     "morgan": "^1.9.1"
   }
