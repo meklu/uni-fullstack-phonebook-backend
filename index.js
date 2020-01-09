@@ -49,6 +49,49 @@ app.delete('/api/persons/:id', (req, res) => {
 	res.status(204).end()
 })
 
+app.post('/api/persons', (req, res) => {
+	const { name, number } = req.body
+	let error = []
+
+	if (typeof name === undefined || name === '') {
+		error = error.concat('name must be provided')
+	}
+
+	if (typeof number === undefined || number === '') {
+		error = error.concat('number must be provided')
+	} else if (!/^\+?[0-9]+/.test(number)) {
+		error = error.concat('number is invalid')
+	}
+
+	const id = Math.floor(Math.random() * 2000000000)
+	const newP = {
+		name, number, id
+	}
+
+	if (persons.find(p => p.name === newP.name)) {
+		error = error.concat('name must be unique')
+	}
+
+	console.log(error)
+	if (error.length > 0) {
+		res.status(400)
+			.json({error: error.join('\n')})
+			.end()
+		return
+	}
+
+	if (persons.find(p => p.id === newP.id)) {
+		res.status(500)
+			.json({error: 'generated id matches existing entry'})
+			.end()
+		return
+	}
+
+	persons = persons.concat(newP)
+
+	res.json(newP)
+})
+
 app.get('/info', (req, res) => {
 	res.append('Content-type', 'text/plain; charset=utf-8')
 	let msg = ''
