@@ -29,8 +29,16 @@ let persons = [
 
 app.use(bodyParser.json())
 
-app.get('/api/persons', (req, resp) => {
-	resp.json(persons)
+app.get('/api/persons', (req, res) => {
+	res.json(persons)
+})
+
+app.get('/info', (req, res) => {
+	res.append('Content-type', 'text/plain; charset=utf-8')
+	let msg = ''
+	msg += `Phonebook has info for ${persons.length} people`
+	msg += `\n\n${new Date()}`
+	res.send(msg)
 })
 
 app.listen(PORT, () => {
