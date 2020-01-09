@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const PORT = process.env.PORT || 3001
 
 const express = require('express')
@@ -6,28 +8,7 @@ const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
 
-let persons = [
-	{
-		"name": "Arto Hellas",
-		"number": "040-123456",
-		"id": 1
-	},
-	{
-		"name": "Ada Lovelace",
-		"number": "39-44-5323523",
-		"id": 2
-	},
-	{
-		"name": "Dan Abramov",
-		"number": "12-43-234345",
-		"id": 3
-	},
-	{
-		"name": "Mary Poppendieck",
-		"number": "39-23-6423122",
-		"id": 4
-	}
-]
+const Person = require('./models/Person')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -36,24 +17,31 @@ app.use(bodyParser.json())
 morgan.token('body', (req, res) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
+let persons = []
+
 app.get('/api/persons', (req, res) => {
-	res.json(persons)
+	Person.find({}).then(data => {
+		res.json(data.map(p => p.toJSON()))
+	})
 })
 
 app.get('/api/persons/:id', (req, res) => {
-	const id = Number(req.params.id)
-	const person = persons.find(p => p.id === id)
-	if (person) {
+	const id = req.params.id
+	Person.findById(id).then(person => {
 		res.json(person)
-	} else {
+	}).catch(err => {
 		res.status(404).end()
-	}
+	})
 })
 
 app.delete('/api/persons/:id', (req, res) => {
-	const id = Number(req.params.id)
-	persons = persons.filter(p => p.id !== id)
-	res.status(204).end()
+	const id = req.params.id
+	Person.findByIdAndDelete(id).then((data) => {
+		res.status(204).end()
+	}).catch((err) => {
+		console.log(`couldn't delete person with id ${id}`, err.message)
+		res.status(204).end()
+	})
 })
 
 app.post('/api/persons', (req, res) => {
@@ -70,33 +58,37 @@ app.post('/api/persons', (req, res) => {
 		error = error.concat('number is invalid')
 	}
 
-	const id = Math.floor(Math.random() * 2000000000)
-	const newP = {
-		name, number, id
-	}
+	const newP = Person({
+		name, number
+	})
 
-	if (persons.find(p => p.name === newP.name)) {
-		error = error.concat('name must be unique')
-	}
+	Person.exists({name}).then((extant) => {
+		if (extant) {
+			error = error.concat('name must be unique')
+		}
 
-	console.log(error)
-	if (error.length > 0) {
-		res.status(400)
-			.json({error: error.join('\n')})
-			.end()
-		return
-	}
+		console.log(error)
+		if (error.length > 0) {
+			res.status(400)
+				.json({error: error.join('\n')})
+				.end()
+			return
+		}
 
-	if (persons.find(p => p.id === newP.id)) {
+		newP.save().then((data) => {
+			res.json(newP.toJSON())
+		}).catch((err) => {
+			console.log(`failed to save person ${name}`, err.message)
+			res.status(500)
+				.json({error: `database error while saving person:\n\t${err.message}`})
+				.end()
+		})
+	}).catch((err) => {
+		console.log(`failure while checking existence`, err.message)
 		res.status(500)
-			.json({error: 'generated id matches existing entry'})
+			.json({error: `database error while checking existence:\n\t${err.message}`})
 			.end()
-		return
-	}
-
-	persons = persons.concat(newP)
-
-	res.json(newP)
+	})
 })
 
 app.get('/info', (req, res) => {

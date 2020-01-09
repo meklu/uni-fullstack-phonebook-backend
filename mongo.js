@@ -15,9 +15,8 @@ const personSchema = new mongoose.Schema({
 
 const Person = mongoose.model('Person', personSchema)
 
-const failureF = res => {
-	console.log('something failed')
-	console.log(res)
+const failureF = error => {
+	console.log('something failed: ', error.message)
 	mongoose.connection.close()
 }
 
