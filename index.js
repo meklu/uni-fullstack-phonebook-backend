@@ -17,8 +17,6 @@ app.use(bodyParser.json())
 morgan.token('body', (req, res) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
-let persons = []
-
 app.get('/api/persons', (req, res, next) => {
 	Person.find({}).then(data => {
 		res.json(data.map(p => p.toJSON()))
@@ -45,55 +43,32 @@ app.delete('/api/persons/:id', (req, res, next) => {
 
 app.post('/api/persons', (req, res, next) => {
 	const { name, number } = req.body
-	let error = []
-
-	if (typeof name === undefined || name === '') {
-		error = error.concat('name must be provided')
-	}
-
-	if (typeof number === undefined || number === '') {
-		error = error.concat('number must be provided')
-	} else if (!/^\+?[0-9]+/.test(number)) {
-		error = error.concat('number is invalid')
-	}
 
 	const newP = Person({
 		name, number
 	})
 
-	Person.exists({name}).then((extant) => {
-		if (extant) {
-			error = error.concat('name must be unique')
-		}
-
-		console.log(error)
-		if (error.length > 0) {
-			res.status(400)
-				.json({error: error.join('\n')})
-				.end()
-			return
-		}
-
-		newP.save().then((data) => {
-			res.json(newP.toJSON())
-		}).catch(err => next(err))
+	newP.save().then((data) => {
+		res.json(newP.toJSON())
 	}).catch(err => next(err))
 })
 
 app.put('/api/persons/:id', (req, res, next) => {
 	const id = req.params.id
 	const { number } = req.body
-	Person.findByIdAndUpdate(id, {number}, { new: true }).then((person) => {
+	Person.findByIdAndUpdate(id, {number}, { new: true, runValidators: true }).then((person) => {
 		res.json(person.toJSON())
 	}).catch(err => next(err))
 })
 
 app.get('/info', (req, res) => {
-	res.append('Content-type', 'text/plain; charset=utf-8')
-	let msg = ''
-	msg += `Phonebook has info for ${persons.length} people`
-	msg += `\n\n${new Date()}`
-	res.send(msg)
+	(async () => {
+		res.append('Content-type', 'text/plain; charset=utf-8')
+		let msg = ''
+		msg += `Phonebook has info for ${await Person.estimatedDocumentCount()} people`
+		msg += `\n\n${new Date()}`
+		res.send(msg)
+	})()
 })
 
 const unknownEndpoint = (req, res) => {
@@ -111,7 +86,7 @@ const errorHandler = (err, req, res, next) => {
 			return res.status(400).json({error: 'malformed id'})
 		}
 		if (err.name === 'ValidationError') {
-			return res.status(400).json({error: `validation for field ${err.path} failed`})
+			return res.status(400).json({error: err.message})
 		}
 
 		return res.status(500).json({error: `unhandled database error: ${err.message}`})
