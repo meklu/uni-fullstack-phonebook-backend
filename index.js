@@ -19,32 +19,31 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 
 let persons = []
 
-app.get('/api/persons', (req, res) => {
+app.get('/api/persons', (req, res, next) => {
 	Person.find({}).then(data => {
 		res.json(data.map(p => p.toJSON()))
-	})
+	}).catch(err => next(err))
 })
 
-app.get('/api/persons/:id', (req, res) => {
+app.get('/api/persons/:id', (req, res, next) => {
 	const id = req.params.id
 	Person.findById(id).then(person => {
-		res.json(person)
-	}).catch(err => {
-		res.status(404).end()
-	})
+		if (person) {
+			res.json(person)
+		} else {
+			res.status(404).end()
+		}
+	}).catch(err => next(err))
 })
 
-app.delete('/api/persons/:id', (req, res) => {
+app.delete('/api/persons/:id', (req, res, next) => {
 	const id = req.params.id
 	Person.findByIdAndDelete(id).then((data) => {
 		res.status(204).end()
-	}).catch((err) => {
-		console.log(`couldn't delete person with id ${id}`, err.message)
-		res.status(204).end()
-	})
+	}).catch(err => next(err))
 })
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
 	const { name, number } = req.body
 	let error = []
 
@@ -77,18 +76,8 @@ app.post('/api/persons', (req, res) => {
 
 		newP.save().then((data) => {
 			res.json(newP.toJSON())
-		}).catch((err) => {
-			console.log(`failed to save person ${name}`, err.message)
-			res.status(500)
-				.json({error: `database error while saving person:\n\t${err.message}`})
-				.end()
-		})
-	}).catch((err) => {
-		console.log(`failure while checking existence`, err.message)
-		res.status(500)
-			.json({error: `database error while checking existence:\n\t${err.message}`})
-			.end()
-	})
+		}).catch(err => next(err))
+	}).catch(err => next(err))
 })
 
 app.get('/info', (req, res) => {
@@ -98,6 +87,29 @@ app.get('/info', (req, res) => {
 	msg += `\n\n${new Date()}`
 	res.send(msg)
 })
+
+const unknownEndpoint = (req, res) => {
+	res.status(404).send({error: 'unknown endpoint'})
+}
+
+app.use(unknownEndpoint)
+
+const errorHandler = (err, req, res, next) => {
+	const mongooseError = require('mongoose').Error
+	console.error(err.message)
+
+	if (err instanceof mongooseError) {
+		if (err.name === 'CastError' && err.kind === 'ObjectId') {
+			return res.status(400).json({error: 'malformed id'})
+		}
+
+		return res.status(500).json({error: `unhandled database error: ${err.message}`})
+	}
+
+	next(err)
+}
+
+app.use(errorHandler)
 
 app.listen(PORT, () => {
 	console.log(`Server listening on port ${PORT}`)
