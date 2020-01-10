@@ -15,6 +15,8 @@ personSchema.set('toJSON', {
 	}
 })
 
+mongoose.set('useFindAndModify', false)
+
 mongoose.connect(db_uri, { useNewUrlParser: true, useUnifiedTopology: true })
 	.then((result) => {
 		console.log('connected to MongoDB')

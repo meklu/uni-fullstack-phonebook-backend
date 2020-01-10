@@ -80,6 +80,14 @@ app.post('/api/persons', (req, res, next) => {
 	}).catch(err => next(err))
 })
 
+app.put('/api/persons/:id', (req, res, next) => {
+	const id = req.params.id
+	const { number } = req.body
+	Person.findByIdAndUpdate(id, {number}, { new: true }).then((person) => {
+		res.json(person.toJSON())
+	}).catch(err => next(err))
+})
+
 app.get('/info', (req, res) => {
 	res.append('Content-type', 'text/plain; charset=utf-8')
 	let msg = ''
@@ -101,6 +109,9 @@ const errorHandler = (err, req, res, next) => {
 	if (err instanceof mongooseError) {
 		if (err.name === 'CastError' && err.kind === 'ObjectId') {
 			return res.status(400).json({error: 'malformed id'})
+		}
+		if (err.name === 'ValidationError') {
+			return res.status(400).json({error: `validation for field ${err.path} failed`})
 		}
 
 		return res.status(500).json({error: `unhandled database error: ${err.message}`})
