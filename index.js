@@ -56,7 +56,7 @@ app.post('/api/persons', (req, res, next) => {
 app.put('/api/persons/:id', (req, res, next) => {
 	const id = req.params.id
 	const { number } = req.body
-	Person.findByIdAndUpdate(id, {number}, { new: true, runValidators: true }).then((person) => {
+	Person.findByIdAndUpdate(id, { number }, { new: true, runValidators: true }).then((person) => {
 		res.json(person.toJSON())
 	}).catch(err => next(err))
 })
@@ -72,7 +72,7 @@ app.get('/info', (req, res) => {
 })
 
 const unknownEndpoint = (req, res) => {
-	res.status(404).send({error: 'unknown endpoint'})
+	res.status(404).send({ error: 'unknown endpoint' })
 }
 
 app.use(unknownEndpoint)
@@ -83,13 +83,13 @@ const errorHandler = (err, req, res, next) => {
 
 	if (err instanceof mongooseError) {
 		if (err.name === 'CastError' && err.kind === 'ObjectId') {
-			return res.status(400).json({error: 'malformed id'})
+			return res.status(400).json({ error: 'malformed id' })
 		}
 		if (err.name === 'ValidationError') {
-			return res.status(400).json({error: err.message})
+			return res.status(400).json({ error: err.message })
 		}
 
-		return res.status(500).json({error: `unhandled database error: ${err.message}`})
+		return res.status(500).json({ error: `unhandled database error: ${err.message}` })
 	}
 
 	next(err)

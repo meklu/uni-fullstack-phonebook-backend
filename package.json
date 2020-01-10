@@ -7,6 +7,7 @@
     "start": "node index.js",
     "watch": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
     "build:ui": "rm -rf ./build/ && cd ../uni-fullstack/osa2/puhelinluettelo/ && npm run build --prod && cd - && cp -r ../uni-fullstack/osa2/puhelinluettelo/build/ ./build/",
     "deploy": "git push heroku master",
     "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push && npm run deploy",
@@ -15,6 +16,7 @@
   "author": "",
   "license": "CC0-1.0",
   "devDependencies": {
+    "eslint": "^6.8.0",
     "nodemon": "^2.0.2"
   },
   "dependencies": {

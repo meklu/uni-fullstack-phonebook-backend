@@ -39,7 +39,7 @@ const listPersons = () => {
 		.find({})
 		.then(persons => {
 			console.log('phonebook:')
-			persons.forEach((person, k, e) => {
+			persons.forEach((person) => {
 				console.log(`${person.name}: ${person.number}`)
 			})
 			mongoose.connection.close()
