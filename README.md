@@ -1,5 +1,13 @@
 # Phonebook backend
 
+## 2022-11-29
+
+This was an old course project. Very old, very deprecated notes follow. The
+heroku instance is probably dead as of now as well, since they nuked their free
+tier at some point along the way.
+
+## Old notes
+
 For convenience, there is an instance running at
 https://whispering-peak-27579.herokuapp.com/
 
